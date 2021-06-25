@@ -2,21 +2,39 @@ name: "🚀 release"
 
 on:
   push:
-    branches: [master]
+    branches: [main]
+  pull_request:
+    branches: "*"
 
 jobs:
-  release:
-    name: 🚀 release
-    runs-on: ubuntu-latest
+  quality:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        node-version: [10.x, 12.x, 14.x, 15.x]
+        os: [ubuntu-latest, windows-latest]
+
     steps:
       - uses: actions/checkout@v2
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v2
         with:
-          node-version: 12
-      - name: 🚀 publish
-      - run: npm i
-      - run: npm run build
-        run: npm publish --access public
+          node-version: ${{ matrix.node-version }}
+      - run: npm ci
+      - run: npm test
+
+  publish:
+    runs-on: ubuntu-latest
+    if: ${{ github.ref == 'refs/heads/main' }}
+    needs: [quality]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+      - run: npm ci
+      - run: npm run semantic-release
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
