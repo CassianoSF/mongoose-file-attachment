@@ -1,7 +1,7 @@
 {
-  "name": "attachment-plugin",
+  "name": "mongoose-file-attachment",
   "version": "1.1.0",
-  "description": "",
+  "description": "File Sysytem persistence layer for Mongoose",
   "main": "dist/index.js",
   "scripts": {
     "start": "node dist/index.js",
@@ -12,8 +12,8 @@
   },
   "type": "commonjs",
   "types": "dist/index.d.ts",
-  "author": "",
-  "license": "ISC",
+  "author": "Cassiano Surdi Franco and Tiago Adalberto Debastiani",
+  "license": "MIT",
   "dependencies": {
     "formidable": "^1.2.2",
     "mongoose": "^5.12.12"
