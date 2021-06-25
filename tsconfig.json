@@ -1,0 +1,41 @@
+{
+  "compilerOptions": {
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "es2020"
+    ],
+    "target": "es2019",
+    /*versão do ECMAScript*/
+    "module": "commonjs",
+    "strict": true,
+    "esModuleInterop": true,
+    "rootDir": "./",
+    /*arquivos TypeScript*/
+    "outDir": "./dist",
+    /*arquivos JavaScript compilados*/
+    "baseUrl": "./",
+    "allowJs": true,
+    "sourceMap": true,
+    "skipLibCheck": true,
+    "noImplicitAny": false,
+    "forceConsistentCasingInFileNames": true,
+    /* Disallow inconsistently-cased references to the same file. */
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationDir": "./dist",
+    "typeRoots": [
+      //      "./@types",
+      "./node_modules/@types"
+    ]
+  },
+  "include": [
+    "index.ts",
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "tests",
+    "src/views"
+  ]
+}
