@@ -7,28 +7,9 @@ on:
     branches: "*"
 
 jobs:
-  quality:
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      matrix:
-        node-version: [12.x, 14.x, 15.x]
-        os: [ubuntu-latest]
-
-    steps:
-      - uses: actions/checkout@v2
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v2
-        with:
-          node-version: ${{ matrix.node-version }}
-      - run: npm i
-      - run: npm run build
-      - run: npm run test
-
   publish:
     runs-on: ubuntu-latest
     if: ${{ github.ref == 'refs/heads/master' }}
-    needs: [quality]
     steps:
       - uses: actions/checkout@v2
       - name: Use Node.js ${{ matrix.node-version }}
