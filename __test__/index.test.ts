@@ -52,9 +52,9 @@ describe('testing create attachment', () => {
     await TestModel.create({
       foo: 'fooo',
       bar: 'baaar',
-      logo0: new FileAttachment({ path: fixtures, name: fileName, size: 1024, type: 'text' }),
+      logo0: new FileAttachment({ path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text' }),
       images: {
-        logo1: new FileAttachment({ path: fixtures, name: fileName, size: 1024, type: 'text' }),
+        logo1: new FileAttachment({ path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text' }),
         logo2: null,
       },
     })
@@ -127,9 +127,9 @@ describe('testing update attachment', () => {
     await TestModel.create({
       foo: 'fooo',
       bar: 'baaar',
-      logo0: new FileAttachment({ path: fixtures, name: fileName, size: 1024, type: 'text' }),
+      logo0: new FileAttachment({ path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text' }),
       images: {
-        logo1: new FileAttachment({ path: fixtures, name: fileName, size: 1024, type: 'text' }),
+        logo1: new FileAttachment({ path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text' }),
         logo2: null,
       },
     })
@@ -137,7 +137,7 @@ describe('testing update attachment', () => {
       logo0: null,
       images: {
         logo1: null,
-        logo2: new FileAttachment({ path: fixtures, name: fileName, size: 1024, type: 'text' }),
+        logo2: new FileAttachment({ path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text' }),
       },
     })
     const doc = await TestModel.findOne({})
@@ -165,9 +165,9 @@ describe('testing update attachment', () => {
     const originalDoc = await TestModel.create({
       foo: 'fooo',
       bar: 'baaar',
-      logo0: new FileAttachment({ path: fixtures, name: fileName, size: 1024, type: 'text' }),
+      logo0: new FileAttachment({ path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text' }),
       images: {
-        logo1: new FileAttachment({ path: fixtures, name: fileName, size: 1024, type: 'text' }),
+        logo1: new FileAttachment({ path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text' }),
         logo2: null,
       },
     })
@@ -175,7 +175,7 @@ describe('testing update attachment', () => {
       logo0: null,
       images: {
         logo1: null,
-        logo2: new FileAttachment({ path: fixtures, name: fileName, size: 1024, type: 'text' }),
+        logo2: new FileAttachment({ path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text' }),
       },
     }, { new: true, useFindAndModify: false})
     const doc = await TestModel.findOne({})

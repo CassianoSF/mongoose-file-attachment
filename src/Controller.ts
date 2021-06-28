@@ -124,10 +124,7 @@ export default class Controller {
         const mkCb = async (attachment: AttachData): Promise<void> => {
             attachment.data.serviceId = doc.id
             attachment.data._id = Types.ObjectId().toHexString()
-            const tmpPath = Path.join(
-                attachment.data.path,
-                attachment.data.name,
-            )
+            const tmpPath = attachment.data.path
             const storage = Storage.from(attachment, doc)
             attachment.data.path = Path.join(storage.storagePath, attachment.data._id)
             await storage.fsMkdir(attachment.data._id)
