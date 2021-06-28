@@ -91,7 +91,6 @@ export default class Controller {
 
     private async saveFile(attachment: AttachData, doc: Document): Promise<void> {
         if (!attachment.data) return
-        if (!attachment.data._id) throw new Error('Attachment ID is missing')
         attachment.data.serviceId = doc.id
         attachment.data._id = Types.ObjectId().toHexString()
         const srcPath = attachment.data.path
@@ -121,25 +120,12 @@ export default class Controller {
         doc: Document,
         modified: UpdateQuery<FileAttachment> | UpdateWithAggregationPipeline | null,
     ): Promise<void[]> {
-        const mkCb = async (attachment: AttachData): Promise<void> => {
-            attachment.data.serviceId = doc.id
-            attachment.data._id = Types.ObjectId().toHexString()
-            const tmpPath = attachment.data.path
-            const storage = Storage.from(attachment, doc)
-            attachment.data.path = Path.join(storage.storagePath, attachment.data._id)
-            await storage.fsMkdir(attachment.data._id)
-            await storage.fsCopy(tmpPath, Path.join(attachment.data._id, attachment.data.name))
-        }
+        const mkCb = (attachment: AttachData): Promise<void> => 
+            this.saveFile(attachment, doc)
 
-        const rmCb = async (attachment: AttachData): Promise<void> => {
-            if (!attachment.data) return
-            if (!attachment.data._id) throw new Error('Attachment ID is missing')
-            attachment.data.serviceId = doc.id
-            const storage = Storage.from(attachment, doc)
-            const filePath = Path.join(attachment.data._id, attachment.data.name)
-            await storage.fsRemove(filePath)
-            await storage.fsRmdir(attachment.data._id)
-        }
+        const rmCb = (attachment: AttachData): Promise<void> =>
+            this.removeFile(attachment, doc)
+
         const schemaObj = this.schema.obj
         const promises = this.updateFileAttachments(doc, modified, schemaObj, rmCb, mkCb)
         return Promise.all(promises)
