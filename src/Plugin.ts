@@ -9,14 +9,14 @@ const attachmentPlugin = (schema: Schema<Document>): void => {
 
   schema.pre('save', async function (next) {
     const controller = new Controller(schema)
-    if (!this.isNew) {
+    if (this.isNew) {
+      await controller.saveAttachments(this)
+    } else {
       const { $originalDoc } = this
       if ($originalDoc) {
-        const fields = this.modifiedPaths({ includeChildren: true })
-        await controller.updateAttachmentsOnSave($originalDoc, fields)
+        await controller.updateAttachmentsOnSave($originalDoc, this)
       }
     }
-    await controller.saveAttachments(this)
     next()
   })
 
