@@ -1,6 +1,6 @@
 {
   "name": "mongoose-file-attachment",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "description": "File Sysytem persistence layer for Mongoose",
   "main": "dist/index.js",
   "scripts": {
