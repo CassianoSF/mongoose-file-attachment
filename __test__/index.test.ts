@@ -38,6 +38,11 @@ const testSchema = new Schema({
       },
     },
   },
+}, {
+  timestamps: {
+    createdAt: 'createDate',
+    updatedAt: 'updateDate',
+  }
 })
 testSchema.plugin(AttachmentPlugin)
 const TestModel = model('TestModel', testSchema, 'tests')

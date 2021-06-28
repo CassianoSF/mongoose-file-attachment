@@ -42,6 +42,7 @@ export default class Controller {
                     ))
             }
             Object.keys(modifiedDoc).forEach((key) => {
+                if (schemaObj == undefined) return
                 if (modifiedDoc[key] instanceof FileAttachment) {
                     promises.push(mkCb({
                         data: modifiedDoc[key],
