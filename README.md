@@ -2,11 +2,13 @@
 
 [![][npmv-img]][npmv-url] [![][license-img]][license-url] [![][build-img]][build-url]
 
+> File System persistence layer for Mongoose
+
 [![][npm-weekly-img]][npmv-url] [![][npm-monthly-img]][npmv-url]
 [![][npm-yearly-img]][npmv-url] [![][npm-alltime-img]][npmv-url]
 
 * [Install](#Install)
-* [Usage](#usage)
+* [Examples](#Examples)
 
 ## Install
 
