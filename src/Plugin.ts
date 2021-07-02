@@ -17,12 +17,14 @@ const attachmentPlugin = (schema: Schema<Document>): void => {
         await controller.updateAttachmentsOnSave($originalDoc, this)
       }
     }
+    await controller.removeStorages(this)
     next()
   })
 
   schema.pre('deleteOne', { document: true }, async function (next) {
     const controller = new Controller(schema)
     await controller.removeAttachments(this)
+    await controller.removeStorages(this)
     next()
   })
 
@@ -30,8 +32,9 @@ const attachmentPlugin = (schema: Schema<Document>): void => {
     const controller = new Controller(schema)
     const modified = this.getUpdate()
     const docs = await this.find()
-    const promises = docs.map((doc) => controller.updateAttachments(doc, modified))
+    const promises = docs.map(async (doc) => controller.updateAttachments(doc, modified))
     await Promise.all(promises)
+    await controller.removeManyStorages(docs)
     await this.exec()
     next()
   })
@@ -41,6 +44,7 @@ const attachmentPlugin = (schema: Schema<Document>): void => {
     const docs = await this.find()
     const promises = docs.map((doc) => controller.removeAttachments(doc))
     await Promise.all(promises)
+    await controller.removeManyStorages(docs)
     next()
   })
 }

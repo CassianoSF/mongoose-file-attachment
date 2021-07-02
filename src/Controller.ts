@@ -50,6 +50,7 @@ export default class Controller {
           }))
         }
         if (modifiedDoc[key] === null) {
+          if (!schemaObj[key]) return
           promises.push(rmCb({
             data: originalDoc[key],
             options: schemaObj[key].options,
@@ -108,7 +109,6 @@ export default class Controller {
     const filePath = Path.join(attachment.data._id, attachment.data.name)
     await storage.fsRemove(filePath)
     await storage.fsRmdir(attachment.data._id)
-    await storage.rmStorage()
   }
 
   saveAttachments(doc: Document): Promise<void[]> {
@@ -157,6 +157,30 @@ export default class Controller {
     const attachments = this.findAttachments(doc)
     const promises = attachments.map((attachment) =>
       this.removeFile(attachment, doc))
+    return Promise.all(promises)
+  }
+
+  removeStorages(doc: Document): Promise<void[]> {
+    const attachments = this.findAttachments(doc)
+    const storagesMap: { [key: string]: Storage } = attachments.reduce((storages, attachment) => {
+      storages[attachment.options.storageBasePath] ||= Storage.from(attachment, doc)
+      return storages
+    }, {})
+    const storages = Object.values(storagesMap)
+    const promises = storages.map(storage => storage.rmStorage())
+    return Promise.all(promises)
+  }
+
+  removeManyStorages(docs: Document[]): Promise<void[]> {
+    const attachmentsDoc = docs.map(doc => ({ attachments: this.findAttachments(doc), doc })).flat(2)
+    const storagesMap: { [key: string]: Storage } = {}
+    attachmentsDoc.forEach(({ attachments, doc }) => {
+      attachments.forEach(attachment => {
+        storagesMap[attachment.options.storageBasePath] = Storage.from(attachment, doc)
+      })
+    })
+    const storages = Object.values(storagesMap)
+    const promises = storages.map(storage => storage.rmStorage())
     return Promise.all(promises)
   }
 }

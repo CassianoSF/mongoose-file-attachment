@@ -64,11 +64,11 @@ class Storage {
 
   rmStorage(): Promise<void> {
     return new Promise((resolve, reject) => {
-      fs.readdir(this.storagePath, (err, files) => {
-        if (err) return reject(err)
-        if (files.length) return resolve();
-        fs.access(this.storagePath, (err) => {
-          if (err) return resolve()
+      fs.access(this.storagePath, (err) => {
+        if (err) return resolve()
+        fs.readdir(this.storagePath, (err, files) => {
+          if (err) return reject(err)
+          if (files.length) return resolve();
           fs.rmdir(this.storagePath, (err) => {
             if (err) return reject(err)
             resolve()
