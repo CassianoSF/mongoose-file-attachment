@@ -2,9 +2,8 @@ name: "🚀 release"
 
 on:
   push:
-    branches: [master]
-  pull_request:
-    branches: "*"
+    tags:
+      - v*
 
 jobs:
   publish:
