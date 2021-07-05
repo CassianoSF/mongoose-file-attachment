@@ -43,7 +43,7 @@ export default class Controller {
       }
       Object.keys(modifiedDoc).forEach((key) => {
         if (schemaObj == undefined) return
-        if (modifiedDoc[key] instanceof FileAttachment) {
+        if (['FileAttachment', 'File'].includes(modifiedDoc[key]?.constructor?.name)) {
           promises.push(mkCb({
             data: modifiedDoc[key],
             options: schemaObj[key].options,
