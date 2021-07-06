@@ -103,8 +103,7 @@ export default class Controller {
   }
 
   private async removeFile(attachment: AttachData, doc: Document): Promise<void> {
-    if (!attachment.data) return
-    if (!attachment.data._id) throw new Error('Attachment ID is missing')
+    if (!attachment.data || !attachment.data._id) return
     const storage = Storage.from(attachment, doc)
     const filePath = Path.join(attachment.data._id, attachment.data.name)
     await storage.fsRemove(filePath)
