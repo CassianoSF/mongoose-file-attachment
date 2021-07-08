@@ -4,12 +4,14 @@ import AttachmentType from './src/Attachment'
 import Controller from './src/Controller'
 import Storage from './src/Storage'
 import AttachmentPlugin from './src/Plugin'
+import { getFile } from './src/FileController'
 
 export {
   FileAttachment,
   Controller,
   Storage,
   AttachmentType as Attachment,
+  getFile
 }
 
 export default AttachmentPlugin

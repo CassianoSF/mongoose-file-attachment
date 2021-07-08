@@ -1,9 +1,8 @@
 import Path from 'path'
 import fs from 'fs'
-import { model, Schema } from 'mongoose'
+import mongoose, { model, Schema } from 'mongoose'
 import { connect, disconnect } from './connection'
-import AttachmentPlugin, { Attachment, FileAttachment } from '../index'
-
+import AttachmentPlugin, { Attachment, FileAttachment, getFile } from '../index'
 
 const fileName = 'file-test'
 const fixtures = Path.join('__test__', 'fixtures')
@@ -45,7 +44,7 @@ const testSchema = new Schema({
   }
 })
 testSchema.plugin(AttachmentPlugin)
-const TestModel = model('TestModel', testSchema, 'tests')
+const TestModel = model<any>('TestModel', testSchema, 'service-test')
 
 describe('testing create attachment', () => {
   beforeAll(async () => {
@@ -57,9 +56,13 @@ describe('testing create attachment', () => {
     await TestModel.create({
       foo: 'fooo',
       bar: 'baaar',
-      logo0: new FileAttachment({ path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text' }),
+      logo0: new FileAttachment({
+        path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text'
+      }),
       images: {
-        logo1: new FileAttachment({ path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text' }),
+        logo1: new FileAttachment({
+          path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text'
+        }),
         logo2: null,
       },
     })
@@ -110,10 +113,24 @@ describe('testing create attachment', () => {
     expect(buff0.toString()).toBe('Got it!')
     expect(buff1.toString()).toBe('Got it!')
   })
+
+  test('should return FileAttachment', async () => {
+    const doc = await TestModel.findOne({})
+    const [id, serviceId, serviceName] = doc.logo0.url.split('/').reverse()
+    const fileAttachment = await getFile(mongoose, serviceName, serviceId, id)
+    const logo0Path = Path.join(storage, serviceName, doc._id.toString(), doc.logo0._id.toString())
+
+    expect(fileAttachment).not.toBe(undefined)
+    if (fileAttachment) {
+      expect(fileAttachment._id).toBe(id)
+      expect(fileAttachment.serviceName).toBe(serviceName)
+      expect(fileAttachment.serviceId).toBe(serviceId)
+      expect(fileAttachment.type).toBe('text')
+      expect(fileAttachment.name).toBe('file-test')
+      expect(fileAttachment.path).toBe(logo0Path)
+    }
+  })
 })
-
-
-
 
 describe('testing update attachment', () => {
   beforeAll(async () => {
@@ -132,9 +149,13 @@ describe('testing update attachment', () => {
     await TestModel.create({
       foo: 'fooo',
       bar: 'baaar',
-      logo0: new FileAttachment({ path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text' }),
+      logo0: new FileAttachment({
+        path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text'
+      }),
       images: {
-        logo1: new FileAttachment({ path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text' }),
+        logo1: new FileAttachment({
+          path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text'
+        }),
         logo2: null,
       },
     })
@@ -142,7 +163,9 @@ describe('testing update attachment', () => {
       logo0: null,
       images: {
         logo1: null,
-        logo2: new FileAttachment({ path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text' }),
+        logo2: new FileAttachment({
+          path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text'
+        }),
       },
     })
     const doc = await TestModel.findOne({})
@@ -170,9 +193,13 @@ describe('testing update attachment', () => {
     const originalDoc = await TestModel.create({
       foo: 'fooo',
       bar: 'baaar',
-      logo0: new FileAttachment({ path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text' }),
+      logo0: new FileAttachment({
+        path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text'
+      }),
       images: {
-        logo1: new FileAttachment({ path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text' }),
+        logo1: new FileAttachment({
+          path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text'
+        }),
         logo2: null,
       },
     })
@@ -180,9 +207,11 @@ describe('testing update attachment', () => {
       logo0: null,
       images: {
         logo1: null,
-        logo2: new FileAttachment({ path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text' }),
+        logo2: new FileAttachment({
+          path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text'
+        }),
       },
-    }, { new: true, useFindAndModify: false})
+    }, { new: true, useFindAndModify: false })
     const doc = await TestModel.findOne({})
     const storagePath = Path.join('__test__', 'storage', 'service-test', doc.id)
     const logo0File = Path.join(storagePath, originalDoc.logo0._id, originalDoc.logo0.name)
