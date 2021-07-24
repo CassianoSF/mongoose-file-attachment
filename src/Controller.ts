@@ -1,20 +1,24 @@
 /* eslint-disable class-methods-use-this */
-import { Document, Schema, Types, UpdateQuery, UpdateWithAggregationPipeline, } from 'mongoose'
+import {Document, Schema, SchemaType, Types, UpdateQuery, UpdateWithAggregationPipeline} from 'mongoose'
 import * as Path from 'path'
 import Storage from './Storage'
 import FileAttachment from './FileAttachment'
-import { Options } from './Attachment'
+import {Options} from './Attachment'
+
+interface SchemaTypeArray extends SchemaType {
+  caster: SchemaType
+}
 
 export interface AttachData {
-  data: FileAttachment,
+  data: FileAttachment | FileAttachment[],
   options: Options
 }
 
 interface AttachCallback {
   ({
-    data,
-    options,
-  }: AttachData): Promise<void>
+     data,
+     options,
+   }: AttachData): Promise<void>
 }
 
 export default class Controller {
@@ -74,7 +78,10 @@ export default class Controller {
     path: string
   }[] {
     const paths = Object.values(this.schema.paths)
-    const attachs = paths.filter((path) => path.instance === 'Attachment')
+    const attachs = paths
+      .map((path) => path.instance === 'Array' ? (path as SchemaTypeArray).caster : path)
+      .filter((path) => path.instance === 'Attachment')
+
     return attachs.map((attachment) => ({
       data: doc && (typeof doc.get === 'function' ? doc.get(attachment.path) : doc[attachment.path]),
       options: attachment.options.options,
@@ -93,21 +100,46 @@ export default class Controller {
 
   private async saveFile(attachment: AttachData, doc: Document): Promise<void> {
     if (!attachment.data) return
-    attachment.data.serviceId = doc.id
-    attachment.data._id = Types.ObjectId().toHexString()
-    const srcPath = attachment.data.path
-    const storage = Storage.from(attachment, doc)
-    attachment.data.path = Path.join(storage.storagePath, attachment.data._id)
-    await storage.fsMkdir(attachment.data._id)
-    await storage.fsCopy(srcPath, Path.join(attachment.data._id, attachment.data.name))
+    if (Array.isArray(attachment.data)) {
+      await Promise.all(
+        attachment.data.map((data) => {
+          const attach = {
+            ...attachment,
+            data,
+          }
+          return this.saveFile(attach, doc)
+        }),
+      )
+    } else {
+      attachment.data.serviceId = doc.id
+      attachment.data._id = Types.ObjectId().toHexString()
+      const srcPath = attachment.data.path
+      const storage = Storage.from(attachment, doc)
+      attachment.data.path = Path.join(storage.storagePath, attachment.data._id)
+      await storage.fsMkdir(attachment.data._id)
+      await storage.fsCopy(srcPath, Path.join(attachment.data._id, attachment.data.name))
+    }
   }
 
   private async removeFile(attachment: AttachData, doc: Document): Promise<void> {
-    if (!attachment.data || !attachment.data._id) return
-    const storage = Storage.from(attachment, doc)
-    const filePath = Path.join(attachment.data._id, attachment.data.name)
-    await storage.fsRemove(filePath)
-    await storage.fsRmdir(attachment.data._id)
+    if (!attachment.data) return
+    if (Array.isArray(attachment.data)) {
+      await Promise.all(
+        attachment.data.map((data) => {
+          const attach = {
+            ...attachment,
+            data,
+          }
+          return this.removeFile(attach, doc)
+        }),
+      )
+    } else {
+      if (!attachment.data._id) return
+      const storage = Storage.from(attachment, doc)
+      const filePath = Path.join(attachment.data._id, attachment.data.name)
+      await storage.fsRemove(filePath)
+      await storage.fsRmdir(attachment.data._id)
+    }
   }
 
   saveAttachments(doc: Document): Promise<void[]> {
@@ -134,7 +166,7 @@ export default class Controller {
   updateAttachmentsOnSave(original: Document, modified: Document): Promise<void[]> {
     const oldAttachments = this.findAttachments(original)
     const newAttachments = this.findAttachments(modified)
-    const modifiedPaths = modified.modifiedPaths({ includeChildren: true })
+    const modifiedPaths = modified.modifiedPaths({includeChildren: true})
       .filter((path) => oldAttachments.some((oa) => oa.path === path))
 
     const promises = modifiedPaths.map(async (path) => {
@@ -171,9 +203,9 @@ export default class Controller {
   }
 
   removeManyStorages(docs: Document[]): Promise<void[]> {
-    const attachmentsDoc = docs.map(doc => ({ attachments: this.findAttachments(doc), doc })).flat(2)
+    const attachmentsDoc = docs.map(doc => ({attachments: this.findAttachments(doc), doc})).flat(2)
     const storagesMap: { [key: string]: Storage } = {}
-    attachmentsDoc.forEach(({ attachments, doc }) => {
+    attachmentsDoc.forEach(({attachments, doc}) => {
       attachments.forEach(attachment => {
         storagesMap[attachment.options.storageBasePath] = Storage.from(attachment, doc)
       })
