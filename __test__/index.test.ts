@@ -1,8 +1,8 @@
 import Path from 'path'
 import fs from 'fs'
-import mongoose, { model, Schema } from 'mongoose'
-import { connect, disconnect } from './connection'
-import AttachmentPlugin, { Attachment, FileAttachment, getFile } from '../index'
+import mongoose, {model, Schema} from 'mongoose'
+import {connect, disconnect} from './connection'
+import AttachmentPlugin, {Attachment, FileAttachment, getFile} from '../index'
 
 const fileName = 'file-test'
 const fixtures = Path.join('__test__', 'fixtures')
@@ -37,11 +37,19 @@ const testSchema = new Schema({
       },
     },
   },
+  imageList: [{
+    type: Attachment,
+    options: {
+      storageBasePath: storage,
+      baseUrl: 'http://localhost:3000/attachments',
+      serviceName: 'service-test',
+    },
+  }],
 }, {
   timestamps: {
     createdAt: 'createDate',
     updatedAt: 'updateDate',
-  }
+  },
 })
 testSchema.plugin(AttachmentPlugin)
 const TestModel = model<any>('TestModel', testSchema, 'service-test')
@@ -57,14 +65,25 @@ describe('testing create attachment', () => {
       foo: 'fooo',
       bar: 'baaar',
       logo0: new FileAttachment({
-        path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text'
+        path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text',
       }),
       images: {
         logo1: new FileAttachment({
-          path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text'
+          path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text',
         }),
         logo2: null,
       },
+      imageList: [
+        new FileAttachment({
+          path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text',
+        }),
+        new FileAttachment({
+          path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text',
+        }),
+        new FileAttachment({
+          path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text',
+        }),
+      ],
     })
   })
 
@@ -101,6 +120,21 @@ describe('testing create attachment', () => {
     expect(doc.images.logo1.serviceName).toBe('service-test')
     expect(doc.images.logo1.serviceId).not.toBe(null)
     expect(doc.images.logo1.serviceId).not.toBe(undefined)
+    expect(doc.imageList).toBeInstanceOf(Array)
+    expect(doc.imageList.length).toBe(3)
+    for (const i in [0, 1, 2]) {
+      const path = Path.join(storagePath, doc.imageList[i]._id)
+      expect(doc.imageList[i].size).toBe(1024)
+      expect(doc.imageList[i].path).toBe(path)
+      expect(doc.imageList[i].type).toBe('text')
+      expect(doc.imageList[i].name).toBe('file-test')
+      expect(doc.imageList[i]._id).not.toBe(null)
+      expect(doc.imageList[i]._id).not.toBe(undefined)
+      expect(doc.imageList[i].baseUrl).toBe('http://localhost:3000/attachments')
+      expect(doc.imageList[i].serviceName).toBe('service-test')
+      expect(doc.imageList[i].serviceId).not.toBe(null)
+      expect(doc.imageList[i].serviceId).not.toBe(undefined)
+    }
   })
 
   test('should persist files', async () => {
@@ -112,6 +146,11 @@ describe('testing create attachment', () => {
     const buff1 = fs.readFileSync(logo1File)
     expect(buff0.toString()).toBe('Got it!')
     expect(buff1.toString()).toBe('Got it!')
+    for (const i in [0, 1, 2]) {
+      const imageListFile = Path.join(storagePath, doc.imageList[i]._id, doc.imageList[i].name)
+      const imageListBuff = fs.readFileSync(imageListFile)
+      expect(imageListBuff.toString()).toBe('Got it!')
+    }
   })
 
   test('should return FileAttachment', async () => {
@@ -150,23 +189,23 @@ describe('testing update attachment', () => {
       foo: 'fooo',
       bar: 'baaar',
       logo0: new FileAttachment({
-        path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text'
+        path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text',
       }),
       images: {
         logo1: new FileAttachment({
-          path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text'
+          path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text',
         }),
         logo2: null,
-      },
+      }
     })
     await TestModel.findOneAndUpdate({}, {
       logo0: null,
       images: {
         logo1: null,
         logo2: new FileAttachment({
-          path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text'
+          path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text',
         }),
-      },
+      }
     })
     const doc = await TestModel.findOne({})
     const storagePath = Path.join('__test__', 'storage', 'service-test', doc.id)
@@ -194,24 +233,35 @@ describe('testing update attachment', () => {
       foo: 'fooo',
       bar: 'baaar',
       logo0: new FileAttachment({
-        path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text'
+        path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text',
       }),
       images: {
         logo1: new FileAttachment({
-          path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text'
+          path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text',
         }),
         logo2: null,
       },
+      imageList: [
+        new FileAttachment({
+          path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text',
+        }),
+      ]
     })
     await TestModel.findOneAndUpdate({}, {
       logo0: null,
       images: {
         logo1: null,
         logo2: new FileAttachment({
-          path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text'
+          path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text',
         }),
       },
-    }, { new: true, useFindAndModify: false })
+      imageList: [
+        ...originalDoc.imageList,
+        new FileAttachment({
+          path: Path.join(fixtures, fileName), name: fileName, size: 1024, type: 'text',
+        }),
+      ]
+    }, {new: true, useFindAndModify: false})
     const doc = await TestModel.findOne({})
     const storagePath = Path.join('__test__', 'storage', 'service-test', doc.id)
     const logo0File = Path.join(storagePath, originalDoc.logo0._id, originalDoc.logo0.name)
@@ -223,11 +273,15 @@ describe('testing update attachment', () => {
       fs.access(path, (err) => {
         if (err) return resolve(false)
         resolve(true)
-      })
+      }),
     )
     const logo0Exists = await existFile(logo0File)
     const logo1Exists = await existFile(logo1File)
     expect(logo0Exists).toBe(false)
     expect(logo1Exists).toBe(false)
+
+    expect(doc.imageList.length).toBe(2)
+    expect(doc.imageList[0]._id).toBe(originalDoc.imageList[0]._id)
+    expect(doc.imageList[1]._id).not.toBe(doc.imageList[0]._id)
   })
 })
