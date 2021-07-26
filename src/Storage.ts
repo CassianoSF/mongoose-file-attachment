@@ -1,7 +1,8 @@
 import {Document} from 'mongoose'
 import fs from 'fs'
 import * as Path from 'path'
-import {AttachData} from './Controller'
+import {AttachData} from './AttachData'
+
 
 class Storage {
   storagePath: string
