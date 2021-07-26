@@ -5,13 +5,44 @@ import Storage from './Storage'
 import FileAttachment from './FileAttachment'
 import {Options} from './Attachment'
 
-interface SchemaTypeArray extends SchemaType {
-  caster: SchemaType
+interface CustomSchema extends Schema {
+  subpaths?: Record<string, SchemaType>
 }
 
-export interface AttachData {
-  data: FileAttachment | FileAttachment[],
+export interface IAttachData {
+  data: FileAttachment | FileAttachment[]
   options: Options
+  path: string
+}
+
+export class AttachData implements IAttachData {
+  data: FileAttachment | FileAttachment[]
+  options: Options
+  path: string
+
+  constructor(attach: IAttachData) {
+    this.data = attach.data
+    this.options = attach.options
+    this.path = attach.path
+  }
+
+  equals(b: AttachData): boolean {
+    let fileEquals = false
+    if (Array.isArray(this.data) && Array.isArray(b.data)) {
+      if (this.data.length === b.data.length) {
+        let res = true
+        this.data.forEach((data) => {
+          res &&= (b.data as FileAttachment[]).some((f) => f.equals(data))
+        })
+        fileEquals = res
+      }
+    } else {
+      fileEquals = (this.data as FileAttachment).equals(b.data as FileAttachment)
+    }
+    return fileEquals
+      && this.options === b.options
+      && this.path === b.path
+  }
 }
 
 interface AttachCallback {
@@ -22,9 +53,9 @@ interface AttachCallback {
 }
 
 export default class Controller {
-  schema: Schema
+  schema: CustomSchema
 
-  constructor(schema: Schema) {
+  constructor(schema: CustomSchema) {
     this.schema = schema
   }
 
@@ -48,17 +79,19 @@ export default class Controller {
       Object.keys(modifiedDoc).forEach((key) => {
         if (schemaObj == undefined) return
         if (['FileAttachment', 'File'].includes(modifiedDoc[key]?.constructor?.name)) {
-          promises.push(mkCb({
+          promises.push(mkCb(new AttachData({
             data: modifiedDoc[key],
             options: schemaObj[key].options,
-          }))
+            path: '',
+          })))
         }
         if (modifiedDoc[key] === null) {
           if (!schemaObj[key]) return
-          promises.push(rmCb({
+          promises.push(rmCb(new AttachData({
             data: originalDoc[key],
             options: schemaObj[key].options,
-          }))
+            path: '',
+          })))
         }
         if (typeof modifiedDoc[key] === 'object') {
           promises.push(
@@ -72,30 +105,35 @@ export default class Controller {
     return promises
   }
 
-  private findAttachments(doc?: Document): {
-    data: FileAttachment
-    options: Options
-    path: string
-  }[] {
+  private findAttachments(doc?: Document): AttachData[] {
     const paths = Object.values(this.schema.paths)
-    const attachs = paths
-      .map((path) => path.instance === 'Array' ? (path as SchemaTypeArray).caster : path)
-      .filter((path) => path.instance === 'Attachment')
+    if (this.schema.subpaths) {
+      paths.push(...Object.values(this.schema.subpaths))
+    }
+    const attachs = paths.filter((path) => path.instance === 'Attachment')
 
-    return attachs.map((attachment) => ({
-      data: doc && (typeof doc.get === 'function' ? doc.get(attachment.path) : doc[attachment.path]),
-      options: attachment.options.options,
-      path: attachment.path,
-    }))
+    return attachs.map((attachment) => {
+      const docPath = attachment.path.endsWith('.$') ? attachment.path.split('.')[0] : attachment.path
+      const docData = doc && (typeof doc.get === 'function' ? doc.get(docPath) : doc[docPath])
+      if (Array.isArray(docData)) {
+        return docData.map((data, idx) => new AttachData({
+          data,
+          options: attachment.options.options,
+          path: attachment.path.replace(/\$$/, String(idx)),
+        }))
+      } else {
+        return new AttachData({
+          data: docData,
+          options: attachment.options.options,
+          path: attachment.path,
+        })
+      }
+    }).flat()
   }
 
-  findAttachment(doc: Document, id: string): {
-    data: FileAttachment;
-    options: Options;
-    path: string;
-  } | undefined {
+  findAttachment(doc: Document, id: string): AttachData | undefined {
     const attachments = this.findAttachments(doc)
-    return attachments.find((at) => at.data && at.data._id === id)
+    return attachments.find((at) => at.data && !Array.isArray(at.data) && at.data._id === id)
   }
 
   private async saveFile(attachment: AttachData, doc: Document): Promise<void> {
@@ -103,10 +141,10 @@ export default class Controller {
     if (Array.isArray(attachment.data)) {
       await Promise.all(
         attachment.data.map((data) => {
-          const attach = {
+          const attach = new AttachData({
             ...attachment,
             data,
-          }
+          })
           return this.saveFile(attach, doc)
         }),
       )
@@ -126,10 +164,10 @@ export default class Controller {
     if (Array.isArray(attachment.data)) {
       await Promise.all(
         attachment.data.map((data) => {
-          const attach = {
+          const attach = new AttachData({
             ...attachment,
             data,
-          }
+          })
           return this.removeFile(attach, doc)
         }),
       )
@@ -167,20 +205,29 @@ export default class Controller {
     const oldAttachments = this.findAttachments(original)
     const newAttachments = this.findAttachments(modified)
     const modifiedPaths = modified.modifiedPaths({includeChildren: true})
-      .filter((path) => oldAttachments.some((oa) => oa.path === path))
+      .filter((path) => oldAttachments.some((oa) => oa.path === path)
+        || newAttachments.some((na) => na.path === path))
 
     const promises = modifiedPaths.map(async (path) => {
       const oldAttachment = oldAttachments.find((oa) => oa.path === path)
       const newAttachment = newAttachments.find((na) => na.path === path)
       if (oldAttachment && newAttachment) {
-        if (oldAttachment.data) {
-          await this.removeFile(oldAttachment, original)
-        }
-        if (newAttachment.data) {
-          await this.saveFile(newAttachment, modified)
+        if (oldAttachment.equals(newAttachment)) {
+          // Se forem iguais, não faz nada ...
+          return
+        } else {
+          // senão, remove o antigo
+          if (oldAttachment.data) {
+            await this.removeFile(oldAttachment, original)
+          }
         }
       }
+      if (newAttachment && newAttachment.data) {
+        // Salva o novo, se o antigo não existir ou for diferente
+        await this.saveFile(newAttachment, modified)
+      }
     })
+
     return Promise.all(promises)
   }
 

@@ -1,4 +1,4 @@
-import { File } from 'formidable'
+import {File} from 'formidable'
 
 interface IFileAttachment {
   _id?: string | undefined
@@ -49,6 +49,18 @@ export default class FileAttachment implements IFileAttachment {
 
   get url(): string {
     return `${this.baseUrl}/${this.serviceName}/${this.serviceId}/${this._id}`
+  }
+
+  equals(b: FileAttachment): boolean {
+    return (
+      this._id === b._id
+      && this.serviceName === b.serviceName
+      && this.serviceId === b.serviceId
+      && this.baseUrl === b.baseUrl
+      && this.name === b.name
+      && this.size === b.size
+      && this.type === b.type
+    )
   }
 
   toJSON?(): FileAttachmentJSON {

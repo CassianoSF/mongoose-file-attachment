@@ -12,7 +12,8 @@ async function getFile(mongooseInstance: typeof mongoose, serviceName: string, s
     if (document) {
       const attachmentController = new Controller(model.schema)
       const attachment = attachmentController.findAttachment(document, id)?.data
-      if (attachment) {
+      // TODO: Permitir para Array
+      if (attachment && !Array.isArray(attachment)) {
         return attachment
       }
     }
@@ -20,4 +21,4 @@ async function getFile(mongooseInstance: typeof mongoose, serviceName: string, s
   return undefined
 }
 
-export { getFile }
+export {getFile}
