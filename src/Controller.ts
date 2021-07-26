@@ -94,11 +94,36 @@ export default class Controller {
           })))
         }
         if (typeof modifiedDoc[key] === 'object') {
-          promises.push(
-            ...this.updateFileAttachments(
-              originalDoc[key], modifiedDoc[key], schemaObj[key], rmCb, mkCb,
-            ),
-          )
+          if (Array.isArray(modifiedDoc[key])) {
+            modifiedDoc[key].forEach((item, idx) => {
+              if (['FileAttachment', 'File'].includes(modifiedDoc[key][idx]?.constructor?.name)) {
+                const modified = item as FileAttachment
+                const original = originalDoc[key][idx] as FileAttachment | undefined
+                if (original) {
+                  if (original.equals(modified)) {
+                    return
+                  } else {
+                    promises.push(rmCb(new AttachData({
+                      data: original,
+                      options: schemaObj[key][0].options,
+                      path: '',
+                    })))
+                  }
+                }
+                promises.push(mkCb(new AttachData({
+                  data: modified,
+                  options: schemaObj[key][0].options,
+                  path: '',
+                })))
+              }
+            })
+          } else {
+            promises.push(
+              ...this.updateFileAttachments(
+                originalDoc[key], modifiedDoc[key], schemaObj[key], rmCb, mkCb,
+              ),
+            )
+          }
         }
       })
     }

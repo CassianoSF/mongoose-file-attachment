@@ -22,6 +22,7 @@ const attachmentPlugin = (schema: Schema<Document>): void => {
   })
 
   schema.post('save', async (doc) => {
+    // Atualiza/cria o originalDoc após salvar
     doc.$originalDoc = doc.toObject()
   })
 
