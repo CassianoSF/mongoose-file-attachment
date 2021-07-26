@@ -12,8 +12,10 @@ async function getFile(mongooseInstance: typeof mongoose, serviceName: string, s
     if (document) {
       const attachmentController = new Controller(model.schema)
       const attachment = attachmentController.findAttachment(document, id)?.data
-      // TODO: Permitir para Array
-      if (attachment && !Array.isArray(attachment)) {
+      if (attachment) {
+        if (Array.isArray(attachment)) {
+          return attachment.find((attach) => attach._id === id)
+        }
         return attachment
       }
     }
