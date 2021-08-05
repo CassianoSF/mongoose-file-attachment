@@ -13,6 +13,9 @@ async function getFile(mongooseInstance: typeof mongoose, serviceName: string, s
       const attachmentController = new Controller(model.schema)
       const attachment = attachmentController.findAttachment(document, id)?.data
       if (attachment) {
+        if (Array.isArray(attachment)) {
+          return attachment.find((attach) => attach._id === id)
+        }
         return attachment
       }
     }
@@ -20,4 +23,4 @@ async function getFile(mongooseInstance: typeof mongoose, serviceName: string, s
   return undefined
 }
 
-export { getFile }
+export {getFile}

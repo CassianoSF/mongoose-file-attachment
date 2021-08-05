@@ -1,7 +1,8 @@
-import { Document } from 'mongoose'
+import {Document} from 'mongoose'
 import fs from 'fs'
 import * as Path from 'path'
-import { AttachData } from './Controller'
+import {AttachData} from './AttachData'
+
 
 class Storage {
   storagePath: string
@@ -22,10 +23,10 @@ class Storage {
 
   fsMkdir(path: string): Promise<void> {
     return new Promise((resolve, reject) =>
-      fs.mkdir(Path.join(this.storagePath, path), { recursive: true }, (err) => {
+      fs.mkdir(Path.join(this.storagePath, path), {recursive: true}, (err) => {
         if (err) return reject(err)
         resolve()
-      })
+      }),
     )
   }
 
@@ -37,7 +38,7 @@ class Storage {
           if (err) return reject(err)
           resolve()
         })
-      })
+      }),
     )
   }
 
@@ -46,7 +47,7 @@ class Storage {
       fs.unlink(Path.join(this.storagePath, path), (err) => {
         if (err) return reject(err)
         resolve()
-      })
+      }),
     )
   }
 
@@ -68,7 +69,7 @@ class Storage {
         if (err) return resolve()
         fs.readdir(this.storagePath, (err, files) => {
           if (err) return reject(err)
-          if (files.length) return resolve();
+          if (files.length) return resolve()
           fs.rmdir(this.storagePath, (err) => {
             if (err) return reject(err)
             resolve()

@@ -1,5 +1,5 @@
 /* eslint-disable func-names */
-import { Document, Schema } from 'mongoose'
+import {Document, Schema} from 'mongoose'
 import Controller from './Controller'
 
 const attachmentPlugin = (schema: Schema<Document>): void => {
@@ -12,7 +12,7 @@ const attachmentPlugin = (schema: Schema<Document>): void => {
     if (this.isNew) {
       await controller.saveAttachments(this)
     } else {
-      const { $originalDoc } = this
+      const {$originalDoc} = this
       if ($originalDoc) {
         await controller.updateAttachmentsOnSave($originalDoc, this)
       }
@@ -21,7 +21,12 @@ const attachmentPlugin = (schema: Schema<Document>): void => {
     next()
   })
 
-  schema.pre('deleteOne', { document: true }, async function (next) {
+  schema.post('save', async (doc) => {
+    // Atualiza/cria o originalDoc após salvar
+    doc.$originalDoc = doc.toObject()
+  })
+
+  schema.pre('deleteOne', {document: true}, async function (next) {
     const controller = new Controller(schema)
     await controller.removeAttachments(this)
     await controller.removeStorages(this)
