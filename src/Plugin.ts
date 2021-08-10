@@ -52,6 +52,12 @@ const attachmentPlugin = (schema: Schema<Document>): void => {
     await controller.removeManyStorages(docs)
     next()
   })
+
+  schema.post('aggregate', function (objects, next) {
+    const controller = new Controller(schema)
+    controller.instantiateFileAttachments(objects)
+    next()
+  })
 }
 
 export default attachmentPlugin
