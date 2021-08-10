@@ -243,4 +243,21 @@ export default class Controller {
     const promises = storages.map(storage => storage.rmStorage())
     return Promise.all(promises)
   }
+
+  instantiateFileAttachments(docs: Document[]): void {
+    docs.forEach((doc) => {
+      this.findAttachments(doc).forEach((attachData) => {
+        if (attachData.path.includes('.')) {
+          const path = attachData.path.split('.')
+          if (doc[path[0]][path[1]]) {
+            doc[path[0]][path[1]] = new FileAttachment(doc[path[0]][path[1]])
+          }
+        } else {
+          if (doc[attachData.path]) {
+            doc[attachData.path] = new FileAttachment(doc[attachData.path])
+          }
+        }
+      })
+    })
+  }
 }
