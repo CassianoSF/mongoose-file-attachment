@@ -1,5 +1,5 @@
 import FileAttachment from './FileAttachment'
-import {Options} from './Attachment'
+import { Options } from './Attachment'
 
 interface IAttachData {
   data: FileAttachment | FileAttachment[]
@@ -29,7 +29,11 @@ export class AttachData implements IAttachData {
         fileEquals = res
       }
     } else {
-      fileEquals = (this.data as FileAttachment).equals(b.data as FileAttachment)
+      if (this.data && b.data) {
+        fileEquals = (this.data as FileAttachment).equals(b.data as FileAttachment)
+      } else {
+        fileEquals = false
+      }
     }
     return fileEquals
       && this.options === b.options
@@ -39,7 +43,7 @@ export class AttachData implements IAttachData {
 
 export interface AttachCallback {
   ({
-     data,
-     options,
-   }: AttachData): Promise<void>
+    data,
+    options,
+  }: AttachData): Promise<void>
 }
