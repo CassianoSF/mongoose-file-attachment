@@ -1,9 +1,16 @@
 /* eslint-disable class-methods-use-this */
-import {Document, Schema, SchemaType, Types, UpdateQuery, UpdateWithAggregationPipeline} from 'mongoose'
+import {
+  Document,
+  Schema,
+  SchemaType,
+  Types,
+  UpdateQuery,
+  UpdateWithAggregationPipeline
+} from 'mongoose'
 import * as Path from 'path'
 import Storage from './Storage'
 import FileAttachment from './FileAttachment'
-import {AttachCallback, AttachData} from './AttachData'
+import { AttachCallback, AttachData } from './AttachData'
 
 interface CustomSchema extends Schema {
   subpaths?: Record<string, SchemaType>
@@ -186,7 +193,7 @@ export default class Controller {
   updateAttachmentsOnSave(original: Document, modified: Document): Promise<void[]> {
     const oldAttachments = this.findAttachments(original)
     const newAttachments = this.findAttachments(modified)
-    const modifiedPaths = modified.modifiedPaths({includeChildren: true})
+    const modifiedPaths = modified.modifiedPaths({ includeChildren: true })
       .filter((path) => oldAttachments.some((oa) => oa.path === path)
         || newAttachments.some((na) => na.path === path))
 
@@ -232,9 +239,10 @@ export default class Controller {
   }
 
   removeManyStorages(docs: Document[]): Promise<void[]> {
-    const attachmentsDoc = docs.map(doc => ({attachments: this.findAttachments(doc), doc})).flat(2)
+    const attachmentsDoc = docs.map(doc => ({ attachments: this.findAttachments(doc), doc }))
+      .flat(2)
     const storagesMap: { [key: string]: Storage } = {}
-    attachmentsDoc.forEach(({attachments, doc}) => {
+    attachmentsDoc.forEach(({ attachments, doc }) => {
       attachments.forEach(attachment => {
         storagesMap[attachment.options.storageBasePath] = Storage.from(attachment, doc)
       })
@@ -249,7 +257,7 @@ export default class Controller {
       this.findAttachments(doc).forEach((attachData) => {
         if (attachData.path.includes('.')) {
           const path = attachData.path.split('.')
-          if (doc[path[0]][path[1]]) {
+          if (doc[path[0]] && doc[path[0]][path[1]]) {
             doc[path[0]][path[1]] = new FileAttachment(doc[path[0]][path[1]])
           }
         } else {
