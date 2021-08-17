@@ -1,4 +1,4 @@
-import {File} from 'formidable'
+import { File } from 'formidable'
 
 interface IFileAttachment {
   _id?: string | undefined
@@ -42,7 +42,7 @@ export default class FileAttachment implements IFileAttachment {
     this.name = file.name || 'NO_NAME'
 
     this._id = '_id' in file ? file._id : undefined
-    this.baseUrl = 'url' in file ? file.url : undefined
+    this.baseUrl = 'url' in file ? file.url : 'baseUrl' in file ? file.baseUrl : undefined
     this.serviceName = 'serviceName' in file ? file.serviceName : undefined
     this.serviceId = 'serviceId' in file ? file.serviceId : undefined
   }
