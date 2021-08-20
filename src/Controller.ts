@@ -84,7 +84,7 @@ export default class Controller {
           } else {
             promises.push(
               ...this.updateFileAttachments(
-                originalDoc[key], modifiedDoc[key], schemaObj[key], rmCb, mkCb,
+                originalDoc?.[key], modifiedDoc[key], schemaObj[key], rmCb, mkCb,
               ),
             )
           }
