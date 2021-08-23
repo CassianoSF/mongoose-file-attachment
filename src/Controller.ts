@@ -16,6 +16,12 @@ interface CustomSchema extends Schema {
   subpaths?: Record<string, SchemaType>
 }
 
+function getDescendantProp(obj, desc) {
+    const arr = desc.split(".");
+    while(arr.length && (obj = obj[arr.shift()]));
+    return obj;
+}
+
 export default class Controller {
   schema: CustomSchema
 
@@ -38,14 +44,15 @@ export default class Controller {
             ...this.updateFileAttachments(
               originalDoc[key], modifiedDoc[key], schemaObj[key], rmCb, mkCb,
             ),
-          ))
+          )
+        )
       }
       Object.keys(modifiedDoc).forEach((key) => {
         if (schemaObj == undefined) return
         if (['FileAttachment', 'File'].includes(modifiedDoc[key]?.constructor?.name)) {
           promises.push(mkCb(new AttachData({
             data: modifiedDoc[key],
-            options: schemaObj[key].options,
+            options: getDescendantProp(schemaObj, key).options,
             path: '',
           })))
         }
